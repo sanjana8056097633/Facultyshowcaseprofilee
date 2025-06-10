@@ -29,8 +29,7 @@ if submitted:
     The email should introduce the faculty to students or collaborators and summarize the expertise.
     """
 
-    model = genai.GenerativeModel("gemini-2.0-flash
-")
+    model = genai.GenerativeModel("gemini-2.0-flash")
     response = model.generate_content(prompt)
 
     st.subheader("📧 AI-Generated Email")
