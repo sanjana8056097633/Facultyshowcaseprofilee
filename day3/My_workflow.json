@@ -1,0 +1,191 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b025221d-7573-41a1-979c-022a2ef4f448",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "16iIopcNb5kQUlqxzV8yvTlrSI60g3L848nuz1WYcvRE",
+          "mode": "list",
+          "cachedResultName": " Meeting Action Tracker  (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/16iIopcNb5kQUlqxzV8yvTlrSI60g3L848nuz1WYcvRE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1463043621,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/16iIopcNb5kQUlqxzV8yvTlrSI60g3L848nuz1WYcvRE/edit#gid=1463043621"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        220,
+        0
+      ],
+      "id": "42fd568d-1348-4552-a6c0-da9d061ed693",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KOLx8vh44TFMuOU9",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=The name is {{ $json[\"2.Who is filling out these meeting notes?  \"] }} and the date of the meeting is {{ $json[\"1.What is the date of the meeting? \"] }}\n\n\ni need this as a summarise data i need you to \"data\"\ngive me in short detail\n\n",
+        "options": {
+          "systemMessage": "=The name is {{ $json[\"2.Who is filling out these meeting notes?  \"] }} and the date of the meeting is {{ $json[\"1.What is the date of the meeting? \"] }}\n\n\ni need this as a summarise data i need you to \"data\"give me in long detailed response as paragraph\n\n\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        600,
+        -60
+      ],
+      "id": "bef14989-c953-4420-ac00-7dd7b376196a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        580,
+        140
+      ],
+      "id": "47fdd323-a3c0-4a3b-85c8-84be6a71280a",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0ykqRrC7CDUNy7fn",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: Array of rows (from previous node)\nconst inputData = items.map(item => item.json);\n\n// Filter the entries where summary email is \"Yes\"\nconst filteredData = inputData.filter(entry => \n  entry[\"5.Do you want to receive a summary email of this meeting submission?  \"]?.trim().toLowerCase() === \"yes\"\n);\n\n// Return the filtered data as separate items\nreturn filteredData.map(entry => ({ json: entry }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "245580a6-2719-49c8-9a25-ac1df5d077f9",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Code').item.json.Email }}",
+        "subject": "Meeting Tracker Report",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        920,
+        0
+      ],
+      "id": "5b1dbcad-269e-420a-ba48-7d3c2c3c7512",
+      "name": "Gmail",
+      "webhookId": "f6af4aa3-2141-4d09-b999-490f9f72f226",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8DKGWuQWdD8ZmTn5",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "31fce918-f87f-4a08-9364-7b838574dd04",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "91a129e13840748f5d9e74900e90ceec684c158848d4ae8d1d490f9f1c74d211"
+  },
+  "id": "unX4PpKZNLPfUhmF",
+  "tags": []
+}
